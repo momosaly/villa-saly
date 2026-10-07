@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Villa Saly">
+<meta name="theme-color" content="#1A5276">
+<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Villa%20Saly%20%E2%80%94%20Suivi%20Chantier%22%2C%22short_name%22%3A%22Villa%20Saly%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%231A5276%22%2C%22theme_color%22%3A%22%221A5276%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%2520viewBox%3D'0%25200%2520512%2520512'%253E%253Crect%2520width%3D'512'%2520height%3D'512'%2520rx%3D'80'%2520fill%3D'%231A5276'%2F%253E%253Ctext%2520x%3D'256'%2520y%3D'320'%2520font-size%3D'280'%2520text-anchor%3D'middle'%253E%25F0%259F%25A0%25A1%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+<!-- Apple touch icon inline SVG fallback -->
+<title>Villa Saly — Suivi Chantier v3</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --sand:#E8DCC8;--terre:#8B6B47;--ocean:#1A5276;--ciel:#2E86AB;
+  --sol:#1C1C1C;--blanc:#FAF9F6;--gris:#6B6B6B;--gris-l:#E5E0D8;
+  --vert:#27AE60;--rouge:#E74C3C;--or:#F39C12;--violet:#7D3C98;
+  --vert-p:#D5F0E0;--rouge-p:#FDECEA;--or-p:#FEF9E7;--violet-p:#F5EEF8;
+  --r:8px;--shadow:0 2px 16px rgba(28,28,28,.08);
+  --bg:var(--blanc);--surface:#fff;--text:var(--sol);--border:var(--gris-l);
+  --nav-bg:var(--ocean);--nav-text:#fff;--card-bg:#fff;
+}
+[data-theme="dark"]{
+  --bg:#121212;--surface:#1E1E1E;--text:#E0E0E0;--border:#333;
+  --gris-l:#333;--sand:#2a2520;--blanc:#121212;
+  --nav-bg:#0d2a3a;--nav-text:#cce;--card-bg:#1E1E1E;
+  --vert-p:#0d2e1a;--rouge-p:#2e0d0d;--or-p:#2e250d;--violet-p:#1e0d2e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+  padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0);
+  transition:background .3s,color .3s}
+/* NAV */
+.nav{background:var(--nav-bg);padding:12px 16px 0;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.nav-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.nav-title{color:var(--nav-text);font-weight:700;font-size:1.1rem}
+.nav-actions{display:flex;gap:8px;align-items:center}
+.btn-dark{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:20px;
+  padding:4px 12px;cursor:pointer;font-size:.85rem;transition:background .2s}
+.btn-dark:hover{background:rgba(255,255,255,.3)}
+.btn-print{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:20px;
+  padding:4px 12px;cursor:pointer;font-size:.85rem;transition:background .2s}
+.btn-print:hover{background:rgba(255,255,255,.3)}
+.tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:0}
+.tab{background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.7);
+  padding:8px 14px;border-radius:var(--r) var(--r) 0 0;cursor:pointer;
+  font-size:.85rem;white-space:nowrap;position:relative;transition:all .2s}
+.tab.active{background:var(--bg);color:var(--text);font-weight:600}
+.tab:hover:not(.active){background:rgba(255,255,255,.2)}
+.tab-badge{background:var(--rouge);color:#fff;border-radius:10px;
+  font-size:.65rem;padding:1px 5px;position:absolute;top:2px;right:2px;
+  font-weight:700;line-height:1.4}
+/* PAGES */
+.page{display:none;padding:16px;max-width:960px;margin:0 auto}
+.page.active{display:block}
+/* CARDS */
+.card{background:var(--card-bg);border-radius:var(--r);box-shadow:var(--shadow);
+  padding:16px;margin-bottom:16px;border:1px solid var(--border)}
+.card h3{font-size:1rem;color:var(--ocean);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+[data-theme="dark"] .card h3{color:#7ab8d4}
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card-bg);border-radius:var(--r);padding:14px;text-align:center;
+  border:1px solid var(--border);box-shadow:var(--shadow)}
+.kpi.red{background:var(--rouge-p);border-color:var(--rouge)}
+.kpi.red .kpi-val{color:var(--rouge)}
+.kpi.green{background:var(--vert-p);border-color:var(--vert)}
+.kpi.green .kpi-val{color:var(--vert)}
+.kpi-label{font-size:.75rem;color:var(--gris);margin-bottom:4px}
+.kpi-val{font-size:1.2rem;font-weight:700;color:var(--ocean)}
+[data-theme="dark"] .kpi-val{color:#7ab8d4}
+/* BUDGET GLOBAL */
+.budget-global-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.budget-global-row label{font-size:.85rem;color:var(--gris);white-space:nowrap}
+.budget-global-row input{border:1px solid var(--border);border-radius:var(--r);
+  padding:6px 10px;font-size:.9rem;width:180px;background:var(--surface);color:var(--text)}
+.budget-global-row button{padding:6px 14px;border-radius:var(--r);border:none;
+  background:var(--ocean);color:#fff;cursor:pointer;font-size:.85rem}
+/* PROGRESS */
+.prog-wrap{margin-bottom:10px}
+.prog-label{display:flex;justify-content:space-between;font-size:.8rem;color:var(--gris);margin-bottom:3px}
+.prog-label strong{color:var(--text)}
+.prog-bar{height:8px;background:var(--gris-l);border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;transition:width .5s}
+.prog-fill.ok{background:var(--vert)}
+.prog-fill.warn{background:var(--or)}
+.prog-fill.over{background:var(--rouge)}
+/* TABLES */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{background:var(--sand);color:var(--sol);font-weight:600;position:sticky;top:0}
+[data-theme="dark"] th{background:#2a2520}
+tr:hover td{background:rgba(0,0,0,.03)}
+[data-theme="dark"] tr:hover td{background:rgba(255,255,255,.03)}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+td.over{color:var(--rouge);font-weight:600}
+td.ok{color:var(--vert)}
+td.pending{color:var(--gris);font-style:italic}
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:12px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:.8rem;color:var(--gris)}
+.form-group input,.form-group select,.form-group textarea{
+  border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;
+  font-size:.9rem;background:var(--surface);color:var(--text)}
+.form-group textarea{resize:vertical;min-height:70px}
+.btn{padding:8px 16px;border-radius:var(--r);border:none;cursor:pointer;font-size:.875rem;font-weight:500}
+.btn-primary{background:var(--ocean);color:#fff}
+.btn-primary:hover{opacity:.9}
+.btn-secondary{background:var(--gris-l);color:var(--sol)}
+[data-theme="dark"] .btn-secondary{background:#333;color:#ccc}
+.btn-danger{background:var(--rouge-p);color:var(--rouge);border:1px solid var(--rouge)}
+.btn-sm{padding:4px 10px;font-size:.78rem}
+/* SECTION HEADER */
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.section-header h3{font-size:1rem;font-weight:600;color:var(--ocean)}
+[data-theme="dark"] .section-header h3{color:#7ab8d4}
+/* PHASE BLOCK */
+.phase-block{margin-bottom:20px;border-left:4px solid var(--ciel);padding-left:12px}
+.phase-title{font-weight:600;font-size:.95rem;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.phase-locked{font-size:.75rem;background:var(--vert-p);color:var(--vert);
+  padding:2px 8px;border-radius:10px;border:1px solid var(--vert)}
+/* ITEM BLOCKS (matériaux détail) */
+.item-block{border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;background:var(--card-bg)}
+.item-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;gap:8px}
+.item-header:hover{background:var(--gris-l,#f7f7f7)}
+[data-theme="dark"] .item-header:hover{background:#2a2a2a}
+.item-name{font-weight:600;font-size:.88rem;flex:1}
+.item-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.item-budget-chip{font-size:.75rem;background:var(--ocean-p,#e8f4f9);color:var(--ocean,#2E86AB);border-radius:10px;padding:2px 8px;white-space:nowrap}
+.item-achete-chip{font-size:.75rem;background:var(--vert-p,#e9f7ef);color:var(--vert,#27AE60);border-radius:10px;padding:2px 8px;white-space:nowrap}
+.item-pending{font-size:.72rem;background:#FFF9E5;color:#b7860b;border-radius:10px;padding:2px 7px;margin-left:6px}
+.item-warn{font-size:.72rem;background:#FFF0F0;color:var(--rouge);border-radius:10px;padding:2px 7px;margin-left:6px}
+.item-detail{border-top:1px solid var(--border)}
+/* PRIX BOXES */
+.prix-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+.prix-box{padding:10px 14px;background:var(--card-bg)}
+.prix-box label{font-size:.72rem;color:var(--gris);display:block;margin-bottom:4px}
+.prix-val{font-size:1rem;font-weight:700}
+.prix-sub{font-size:.72rem;color:var(--gris);margin-top:2px}
+.prix-box.archi{border-left:3px solid var(--ocean,#2E86AB)}
+.prix-box.ecart-ok{border-left:3px solid var(--vert,#27AE60)}
+.prix-box.ecart-ko{border-left:3px solid var(--rouge,#E74C3C)}
+.prix-box.ecart-neu{border-left:3px solid var(--gris)}
+.vert{color:var(--vert,#27AE60)}.rouge{color:var(--rouge,#E74C3C)}.gris{color:var(--gris)}
+/* HISTORIQUE */
+.historique-section{border-top:1px solid var(--border)}
+.historique-title{display:flex;justify-content:space-between;padding:8px 14px;font-size:.8rem;font-weight:600;background:var(--gris-l,#f7f7f7)}
+[data-theme="dark"] .historique-title{background:#1e1e1e}
+.achat-row{display:flex;align-items:center;gap:8px;padding:6px 14px;border-bottom:1px solid var(--border);font-size:.8rem}
+.achat-date{color:var(--gris);min-width:85px}
+.achat-detail{flex:1}
+.achat-montant{font-weight:600;color:var(--ocean,#2E86AB);white-space:nowrap}
+.achat-del{background:none;border:none;cursor:pointer;color:var(--rouge,#E74C3C);padding:0 4px;font-size:.85rem}
+.nouvel-achat{border-top:1px solid var(--border)}
+/* EXTRAS section */
+.extra-section{border-top:1px solid var(--border);margin-top:8px}
+.extra-section-title{display:flex;justify-content:space-between;padding:6px 14px;font-size:.8rem;font-weight:600;background:var(--or-p,#FFF9E5);color:var(--or,#b7860b)}
+/* EXTRAS */
+.extras-list{font-size:.8rem;color:var(--gris);margin-top:6px}
+.extras-list span{display:inline-block;background:var(--or-p);color:var(--or);
+  border-radius:10px;padding:2px 8px;margin:2px;font-size:.75rem}
+[data-theme="dark"] .extras-list span{background:#2e250d;color:#c9980a}
+/* CHARTS */
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:16px}
+.chart-card{background:var(--card-bg);border-radius:var(--r);padding:16px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.chart-card h4{font-size:.85rem;color:var(--gris);margin-bottom:10px;text-align:center}
+.chart-card canvas{max-height:200px}
+.chart-full{background:var(--card-bg);border-radius:var(--r);padding:16px;border:1px solid var(--border);box-shadow:var(--shadow);margin-bottom:16px}
+.chart-full h4{font-size:.85rem;color:var(--gris);margin-bottom:10px;text-align:center}
+.chart-full canvas{max-height:260px}
+/* RECAP */
+.recap-section{margin-bottom:24px}
+.recap-section h3{font-size:1rem;font-weight:700;color:var(--ocean);
+  border-bottom:2px solid var(--ocean);padding-bottom:6px;margin-bottom:10px}
+[data-theme="dark"] .recap-section h3{color:#7ab8d4;border-color:#7ab8d4}
+.recap-total{font-size:1.1rem;font-weight:700;margin-top:10px}
+/* ADMIN */
+.admin-cat{margin-bottom:20px}
+.admin-cat h4{font-size:.9rem;font-weight:600;color:var(--violet);margin-bottom:8px}
+/* JOURNAL */
+.note-item{border:1px solid var(--border);border-radius:var(--r);padding:12px;
+  margin-bottom:10px;background:var(--surface)}
+.note-date{font-size:.75rem;color:var(--gris);margin-bottom:4px}
+.note-title{font-weight:600;font-size:.9rem;margin-bottom:6px}
+.note-body{font-size:.85rem;color:var(--text);white-space:pre-wrap;line-height:1.5}
+.note-actions{margin-top:8px;display:flex;gap:6px}
+/* PLANNING */
+.planning-phase{border:1px solid var(--border);border-radius:var(--r);
+  padding:12px;margin-bottom:12px;background:var(--surface)}
+.planning-phase h4{font-size:.9rem;font-weight:600;margin-bottom:10px;color:var(--ocean)}
+[data-theme="dark"] .planning-phase h4{color:#7ab8d4}
+.planning-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px}
+.gantt-wrap{margin-top:8px}
+.gantt-bar-container{height:20px;background:var(--gris-l);border-radius:4px;position:relative;overflow:hidden;margin-bottom:4px}
+.gantt-bar{position:absolute;height:100%;border-radius:4px;opacity:.8}
+.gantt-bar.planned{background:var(--ciel)}
+.gantt-bar.real{background:var(--vert);top:0}
+.gantt-legend{font-size:.72rem;color:var(--gris);display:flex;gap:12px;margin-top:4px}
+.gantt-legend span{display:flex;align-items:center;gap:4px}
+.gantt-legend .dot{width:10px;height:10px;border-radius:2px;display:inline-block}
+.statut-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.75rem;font-weight:600}
+.statut-badge.planned{background:var(--or-p);color:var(--or)}
+.statut-badge.ongoing{background:var(--ciel);color:#fff}
+.statut-badge.done{background:var(--vert-p);color:var(--vert)}
+.statut-badge.delayed{background:var(--rouge-p);color:var(--rouge)}
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--sol);color:#fff;padding:10px 20px;border-radius:20px;
+  font-size:.85rem;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+/* UPLOAD */
+.upload-area{border:2px dashed var(--border);border-radius:var(--r);
+  padding:16px;text-align:center;cursor:pointer;color:var(--gris);font-size:.85rem;
+  transition:border-color .2s}
+.upload-area:hover{border-color:var(--ocean)}
+/* PRINT */
+@media print{
+  .nav,.btn,.btn-primary,.btn-secondary,.btn-danger,.btn-print,.btn-dark,
+  .form-grid,.upload-area,.btn-sm,input,select,textarea,
+  #page-dashboard,#page-materiaux,#page-mo,#page-admin,#page-journal,#page-planning
+  {display:none!important}
+  #page-recap{display:block!important}
+  .page{padding:0}
+  body{background:#fff;color:#000}
+  .card,.chart-card,.chart-full{box-shadow:none;border:1px solid #ccc}
+  @page{margin:20mm}
+}
+/* RESPONSIVE */
+@media(max-width:600px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .charts-grid{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-top">
+    <span class="nav-title">🏗 Villa Saly — Lot 30/G</span>
+    <div class="nav-actions">
+      <button class="btn-dark" onclick="toggleDark()">🌙 Thème</button>
+      <button class="btn-print" onclick="window.print()">🖨 Imprimer</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" id="tab-dashboard" onclick="showTab('dashboard',this)">Tableau de bord</button>
+    <button class="tab" id="tab-materiaux" onclick="showTab('materiaux',this)">Matériaux</button>
+    <button class="tab" id="tab-mo" onclick="showTab('mo',this)">Main d'œuvre</button>
+    <button class="tab" id="tab-admin" onclick="showTab('admin',this)">🏛 Administratif</button>
+    <button class="tab" id="tab-journal" onclick="showTab('journal',this)">📓 Journal</button>
+    <button class="tab" id="tab-planning" onclick="showTab('planning',this)">📅 Planning</button>
+    <button class="tab" id="tab-recap" onclick="showTab('recap',this)">Récapitulatif</button>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="budget-global-row">
+    <label>🎯 Enveloppe totale :</label>
+    <input type="number" id="inp-budget-global" placeholder="Ex: 80000000" min="0" step="100000">
+    <button class="btn btn-primary" onclick="saveBudgetGlobal()">Enregistrer</button>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="charts-grid" id="charts-grid"></div>
+  <div class="chart-full" id="chart-line-wrap">
+    <h4>📈 Dépenses mensuelles cumulées</h4>
+    <canvas id="chart-line"></canvas>
+  </div>
+  <div class="card">
+    <h3>📦 Progression Matériaux par phase</h3>
+    <div id="prog-mat"></div>
+  </div>
+  <div class="card">
+    <h3>👷 Progression Main d'œuvre par phase</h3>
+    <div id="prog-mo"></div>
+  </div>
+</div>
+
+<!-- MATERIAUX -->
+<div class="page" id="page-materiaux">
+  <div id="mat-content"></div>
+</div>
+
+<!-- MO -->
+<div class="page" id="page-mo">
+  <div id="mo-content"></div>
+</div>
+
+<!-- ADMIN -->
+<div class="page" id="page-admin">
+  <div id="admin-content"></div>
+</div>
+
+<!-- JOURNAL -->
+<div class="page" id="page-journal">
+  <div class="card">
+    <h3>✏️ Nouvelle note de chantier</h3>
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Titre de la visite</label>
+        <input type="text" id="note-titre" placeholder="Ex: Inspection fondation J+3">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Contenu / observations</label>
+        <textarea id="note-corps" placeholder="Décrivez ce que vous avez observé, les décisions prises, les problèmes rencontrés..."></textarea>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addNote()">📝 Ajouter au journal</button>
+  </div>
+  <div id="notes-list"></div>
+</div>
+
+<!-- PLANNING -->
+<div class="page" id="page-planning">
+  <div class="card" style="margin-bottom:16px">
+    <h3>ℹ️ Planning des phases</h3>
+    <p style="font-size:.85rem;color:var(--gris)">Renseignez les dates prévues et réelles pour chaque phase. Le mini-Gantt s'affiche automatiquement.</p>
+  </div>
+  <div id="planning-content"></div>
+</div>
+
+<!-- RECAP -->
+<div class="page" id="page-recap">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+    <h2 style="font-size:1.2rem;font-weight:700">📋 Récapitulatif complet</h2>
+    <button class="btn btn-primary btn-print" onclick="window.print()">🖨 Imprimer / PDF</button>
+  </div>
+  <div id="recap-content"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+// Durées archi (jours ouvrables) fournies le 30/09/2026
+// Fondation 25j + Dalle fondation 7j → total 32j pour la phase fondation
+// Élévation RDC 20j, Dalle RDC 10j, Élévation R+1 20j, Dalle R+1 10j
+const PHASES_MAT = [
+  {id:"fondation",label:"Fondation",budget:5459500,dureeArchi:32,dureeArchiDetail:"Terrassement/fondation 25j + Dalle de fondation 7j",items:[
+    {id:"1.1",desig:"Béton",unite:"Camion 20m3",qte:2,pu:550000,budget:1100000},
+    {id:"1.2",desig:"Sable",unite:"Camion 20m3",qte:3,pu:120000,budget:360000},
+    {id:"1.3",desig:"Ciment",unite:"t",qte:15,pu:70000,budget:1050000},
+    {id:"1.4",desig:"Briques pleines",unite:"u",qte:1050,pu:650,budget:682500},
+    {id:"1.5",desig:"Fer (total fondation)",unite:"t",qte:3.6,pu:520000,budget:1872000},
+    {id:"1.6",desig:"Fil de fer",unite:"Rlx",qte:2,pu:12000,budget:24000},
+    {id:"1.7",desig:"Paquets pointes",unite:"u",qte:1,pu:11000,budget:11000},
+    {id:"1.8",desig:"Bois coffrage",unite:"m3",qte:1,pu:360000,budget:360000},
+    {id:"1.9",desig:"Béton blanc structurel",unite:null,qte:null,pu:null,budget:0,pending:true},
+  ]},
+  {id:"elev_rdc",label:"Élévation RDC (318 m²)",budget:4448000,dureeArchi:20,items:[
+    {id:"2.1",desig:"Ciment",unite:"t",qte:10,pu:70000,budget:700000},
+    {id:"2.2",desig:"Sable",unite:"Camion 20m3",qte:2,pu:100000,budget:200000},
+    {id:"2.3",desig:"Agglos Creux",unite:"u",qte:2900,pu:450,budget:1305000},
+    {id:"2.5",desig:"Fer HA (élévation)",unite:"t",qte:2.6,pu:500000,budget:1300000},
+    {id:"2.6",desig:"Fil de fer",unite:"Rlx",qte:4,pu:12000,budget:48000},
+    {id:"2.7",desig:"Paquets pointes",unite:"u",qte:1,pu:10000,budget:10000},
+    {id:"2.8",desig:"Bois coffrage chaînages",unite:"m3",qte:1,pu:360000,budget:360000},
+    {id:"2.9",desig:"Béton",unite:"Camion 20m3",qte:1.5,pu:350000,budget:525000},
+  ]},
+  {id:"dalle_rdc",label:"Dalle RDC (incl. terrasse)",budget:3954000,dureeArchi:10,items:[
+    {id:"3.1",desig:"Béton",unite:"Camion 20m3",qte:1.5,pu:350000,budget:525000},
+    {id:"3.2",desig:"Sable",unite:"Camion 20m3",qte:1,pu:100000,budget:100000},
+    {id:"3.3",desig:"Ciment",unite:"t",qte:10,pu:70000,budget:700000},
+    {id:"3.4",desig:"Agglos hourdis",unite:"u",qte:2300,pu:450,budget:1035000},
+    {id:"3.5",desig:"Fer HA (dalle)",unite:"t",qte:2.4,pu:500000,budget:1200000},
+    {id:"3.6",desig:"Fil de fer",unite:"Rlx",qte:2,pu:12000,budget:24000},
+    {id:"3.7",desig:"Paquets pointes",unite:"u",qte:1,pu:10000,budget:10000},
+    {id:"3.8",desig:"Bois coffrage dalle",unite:"m3",qte:1,pu:360000,budget:360000},
+  ]},
+  {id:"cloture_fond",label:"Clôture — Fondation (83,5 ml)",budget:1123000,items:[
+    {id:"4.1",desig:"Ciment fondation clôture",unite:"t",qte:3,pu:70000,budget:210000},
+    {id:"4.2",desig:"Sable fondation clôture",unite:"Camion",qte:.5,pu:120000,budget:60000},
+    {id:"4.3",desig:"Briques pleines clôture",unite:"u",qte:800,pu:650,budget:520000},
+    {id:"4.4",desig:"Fer HA clôture",unite:"t",qte:.5,pu:520000,budget:260000},
+    {id:"4.5",desig:"Fil de fer",unite:"Rlx",qte:1,pu:12000,budget:12000},
+    {id:"4.6",desig:"Paquets pointes",unite:"u",qte:1,pu:11000,budget:11000},
+    {id:"4.7",desig:"Fouilles mécaniques (option)",unite:null,qte:null,pu:null,budget:50000,pending:true},
+  ]},
+  {id:"cloture_elev",label:"Clôture — Élévation 3m",budget:0,pendingPhase:true,items:[
+    {id:"5.1",desig:"Briques creuses clôture",unite:"u",qte:null,pu:null,budget:0,pending:true},
+    {id:"5.2",desig:"Ciment élévation clôture",unite:"t",qte:null,pu:null,budget:0,pending:true},
+    {id:"5.3",desig:"Fer HA élévation clôture",unite:"t",qte:null,pu:null,budget:0,pending:true},
+    {id:"5.4",desig:"Portail + portillon",unite:"u",qte:null,pu:null,budget:0,pending:true},
+  ]},
+  {id:"elev_r1",label:"Élévation R+1 (~120-150 m²)",budget:2759000,dureeArchi:20,items:[
+    {id:"6.1",desig:"Ciment R+1",unite:"t",qte:6,pu:70000,budget:420000},
+    {id:"6.2",desig:"Sable R+1",unite:"Camion",qte:1,pu:120000,budget:120000},
+    {id:"6.3",desig:"Briques creuses 15",unite:"u",qte:1400,pu:300,budget:420000},
+    {id:"6.4",desig:"Briques creuses 10",unite:"u",qte:500,pu:200,budget:100000},
+    {id:"6.5",desig:"Fer HA R+1",unite:"t",qte:1.5,pu:520000,budget:780000},
+    {id:"6.6",desig:"Bois coffrage chaînages R+1",unite:"m3",qte:.4,pu:360000,budget:144000},
+    {id:"6.7",desig:"Cadres R+1",unite:"u",qte:15,pu:25000,budget:375000},
+    {id:"6.8",desig:"Fil de fer",unite:"Rlx",qte:2,pu:12000,budget:24000},
+    {id:"6.9",desig:"Enduit extérieur R+1 (matériaux)",unite:null,qte:null,pu:null,budget:376000,pending:true},
+  ]},
+  {id:"dalle_r1",label:"Dalle R+1",budget:2364000,dureeArchi:10,items:[
+    {id:"7.1",desig:"Béton PAE dalle R+1",unite:"m3",qte:18,pu:95000,budget:1710000},
+    {id:"7.2",desig:"Fer HA dalle R+1",unite:"t",qte:.9,pu:520000,budget:468000},
+    {id:"7.3",desig:"Bois coffrage dalle R+1",unite:"m3",qte:.45,pu:360000,budget:162000},
+    {id:"7.4",desig:"Fil de fer",unite:"Rlx",qte:1,pu:12000,budget:12000},
+    {id:"7.5",desig:"Adjuvants dalle R+1",unite:"L",qte:12,pu:1000,budget:12000},
+  ]},
+];
+
+const PHASES_MO = [
+  {id:"mo_fond",label:"Fondation",budget:1650000,items:[{id:"MO1.1",desig:"Fondation — MO complète",budget:1650000}]},
+  {id:"mo_elev",label:"Élévation RDC",budget:1350000,items:[{id:"MO2.1",desig:"Élévation h=3,5m rez-de-chaussée",budget:1350000}]},
+  {id:"mo_dalle",label:"Dalle RDC",budget:1500000,items:[{id:"MO3.1",desig:"Dalle y/c location matériels",budget:1500000}]},
+  {id:"mo_end",label:"Enduits RDC",budget:2000000,items:[
+    {id:"MO4.1",desig:"Enduits intérieurs",budget:1300000},
+    {id:"MO4.2",desig:"Enduits extérieurs y/c échafaudage",budget:700000},
+  ]},
+  {id:"mo_fin",label:"Finitions + Scellements RDC",budget:310000,items:[{id:"MO5.1",desig:"Finitions + scellement cadres (31 u)",budget:310000}]},
+  {id:"mo_clo",label:"Clôture — MO",budget:0,items:[
+    {id:"MO6.1",desig:"Clôture MO (à chiffrer)",budget:0,pending:true},
+  ]},
+  {id:"mo_r1",label:"R+1 — Main d'œuvre",budget:0,items:[
+    {id:"MO7.1",desig:"R+1 — MO (à chiffrer)",budget:0,pending:true},
+  ]},
+];
+
+const ADMIN_CATS = [
+  {id:"adm_permis",label:"Permis de construire"},
+  {id:"adm_bornage",label:"Bornage / Géomètre"},
+  {id:"adm_notaire",label:"Frais notariaux"},
+  {id:"adm_eau",label:"Raccordement eau"},
+  {id:"adm_elec",label:"Raccordement électricité"},
+  {id:"adm_assurance",label:"Assurance chantier"},
+  {id:"adm_archi",label:"Honoraires architecte"},
+  {id:"adm_taxes",label:"Taxes & impôts locaux"},
+  {id:"adm_autres",label:"Autres frais administratifs"},
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {mat:{},mo:{},extras:{},extras_mo:{},admin:{},closed:{},
+  notes:[],planning:{},budgetGlobal:null,darkMode:false};
+let db = null, assets = null;
+let charts = {};
+
+// ============================================================
+// CAPABILITIES
+// ============================================================
+async function initCapabilities() {
+  try { db = await claude.use("db"); } catch(e){}
+  try { assets = await claude.use("assets"); } catch(e){}
+  if (db) {
+    try {
+      const snap = await db.doc("villa_saly/state").get();
+      if (snap.exists) {
+        const d = snap.data();
+        if (d.mat)         state.mat         = d.mat;
+        if (d.mo)          state.mo          = d.mo;
+        if (d.extras)      state.extras      = d.extras;
+        if (d.extras_mo)   state.extras_mo   = d.extras_mo;
+        if (d.admin)       state.admin       = d.admin;
+        if (d.closed)      state.closed      = d.closed;
+        if (d.notes)       state.notes       = d.notes;
+        if (d.planning)    state.planning    = d.planning;
+        if (d.budgetGlobal!==undefined) state.budgetGlobal = d.budgetGlobal;
+        if (d.darkMode)    state.darkMode    = d.darkMode;
+      }
+      // Pré-remplir le planning archi si les dates ne sont pas encore saisies
+      const planningArchi = {
+        fondation: {dateDebut:"2026-10-12", dateFin:"2026-11-25", statut:"planned"},
+        elev_rdc:  {dateDebut:"2026-11-26", dateFin:"2026-12-24", statut:"planned"},
+        dalle_rdc: {dateDebut:"2027-01-05", dateFin:"2027-01-19", statut:"planned"},
+        elev_r1:   {dateDebut:"2027-01-20", dateFin:"2027-02-17", statut:"planned"},
+        dalle_r1:  {dateDebut:"2027-02-18", dateFin:"2027-03-04", statut:"planned"},
+      };
+      Object.entries(planningArchi).forEach(([id, val])=>{
+        if (!state.planning[id] || !state.planning[id].dateDebut) {
+          state.planning[id] = {...val, ...(state.planning[id]||{})};
+        }
+      });
+    } catch(e){}
+  }
+}
+
+async function saveState() {
+  if (!db) { toast("💾 Sauvegarde locale uniquement"); return; }
+  try { await db.doc("villa_saly/state").set(state); toast("✅ Sauvegardé"); }
+  catch(e) { toast("❌ Erreur de sauvegarde"); }
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmt(n){
+  if(n==null||n===""||isNaN(n)) return "—";
+  return Math.round(n).toLocaleString("fr-FR")+" FCFA";
+}
+function fmtN(n){
+  if(n==null||isNaN(n)) return "—";
+  return Math.round(n).toLocaleString("fr-FR");
+}
+function genId(){return "a"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+function getAchats(itemId){return ((state.mat[itemId]||{}).achats)||[];}
+function getMontantAchete(item){
+  return getAchats(item.id).reduce((s,a)=>{
+    const qte=parseFloat(a.qte)||0,pu=parseFloat(a.prixReel)||0;return s+qte*pu;
+  },0);
+}
+function getQteAchetee(item){return getAchats(item.id).reduce((s,a)=>s+(parseFloat(a.qte)||0),0);}
+function getMOPaye(item){return parseFloat((state.mo[item.id]||{}).paye)||0;}
+function getExtrasTotal(phaseId,type){
+  const store=type==="mo"?state.extras_mo:state.extras;
+  return (store[phaseId]||[]).reduce((s,ex)=>s+(parseFloat(ex.montant)||0),0);
+}
+function getAdminTotal(){
+  return ADMIN_CATS.reduce((s,cat)=>s+(state.admin[cat.id]||[]).reduce((ss,it)=>ss+(parseFloat(it.montant)||0),0),0);
+}
+function calcTotaux(){
+  let bMat=0,aMat=0,bMO=0,pMO=0;
+  PHASES_MAT.forEach(ph=>{
+    ph.items.forEach(it=>{bMat+=it.budget||0; aMat+=getMontantAchete(it);});
+    aMat+=getExtrasTotal(ph.id,"mat");
+  });
+  PHASES_MO.forEach(ph=>{
+    ph.items.forEach(it=>{bMO+=it.budget||0; pMO+=getMOPaye(it);});
+    pMO+=getExtrasTotal(ph.id,"mo");
+  });
+  const admin=getAdminTotal();
+  return {bMat,aMat,bMO,pMO,admin,total:bMat+bMO,depense:aMat+pMO,totalAll:aMat+pMO+admin};
+}
+function toast(msg,dur=2500){
+  const t=document.getElementById("toast");
+  t.textContent=msg;t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),dur);
+}
+function showTab(tab,btn){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.getElementById("page-"+tab).classList.add("active");
+  if(btn)btn.classList.add("active");
+}
+function toggleDark(){
+  state.darkMode=!state.darkMode;
+  document.documentElement.setAttribute("data-theme",state.darkMode?"dark":"");
+  saveState();
+}
+function saveBudgetGlobal(){
+  const v=parseFloat(document.getElementById("inp-budget-global").value);
+  state.budgetGlobal=isNaN(v)?null:v;
+  saveState();
+  renderDashboard();
+  updateBadges();
+  toast("✅ Enveloppe enregistrée");
+}
+
+// ============================================================
+// BADGES
+// ============================================================
+function updateBadges(){
+  // MAT phases over budget → badge on tab
+  let matOver=0;
+  PHASES_MAT.forEach(ph=>{
+    let b=0,a=0;
+    ph.items.forEach(it=>{b+=it.budget||0;a+=getMontantAchete(it);});
+    a+=getExtrasTotal(ph.id,"mat");
+    if(a>b&&b>0) matOver++;
+  });
+  setBadge("tab-materiaux",matOver);
+
+  // MO phases over budget
+  let moOver=0;
+  PHASES_MO.forEach(ph=>{
+    let b=0,p=0;
+    ph.items.forEach(it=>{b+=it.budget||0;p+=getMOPaye(it);});
+    p+=getExtrasTotal(ph.id,"mo");
+    if(p>b&&b>0) moOver++;
+  });
+  setBadge("tab-mo",moOver);
+}
+function setBadge(tabId,count){
+  const tab=document.getElementById(tabId);
+  if(!tab) return;
+  let badge=tab.querySelector(".tab-badge");
+  if(count>0){
+    if(!badge){badge=document.createElement("span");badge.className="tab-badge";tab.appendChild(badge);}
+    badge.textContent=count;
+  } else {
+    if(badge) badge.remove();
+  }
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard(){
+  const T=calcTotaux();
+  const bg=state.budgetGlobal;
+
+  // Budget global input
+  if(bg!=null) document.getElementById("inp-budget-global").value=bg;
+
+  // KPIs
+  const kpis=[
+    {label:"Budget matériaux",val:fmt(T.bMat),cls:""},
+    {label:"Acheté matériaux",val:fmt(T.aMat),cls:T.aMat>T.bMat?"red":""},
+    {label:"Budget MO",val:fmt(T.bMO),cls:""},
+    {label:"Payé MO",val:fmt(T.pMO),cls:T.pMO>T.bMO?"red":""},
+    {label:"Frais administratifs",val:fmt(T.admin),cls:""},
+    {label:"Total engagé",val:fmt(T.totalAll),cls:bg!=null&&T.totalAll>bg?"red":""},
+  ];
+  if(bg!=null){
+    const reste=bg-T.totalAll;
+    kpis.push({label:"Enveloppe totale",val:fmt(bg),cls:""});
+    kpis.push({label:"Reste à engager",val:fmt(reste),cls:reste<0?"red":"green"});
+  }
+  document.getElementById("kpis").innerHTML=kpis.map(k=>`
+    <div class="kpi ${k.cls}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-val">${k.val}</div>
+    </div>`).join("");
+
+  // Charts grid
+  const cg=document.getElementById("charts-grid");
+  cg.innerHTML=`
+    <div class="chart-card"><h4>Matériaux : Budget vs Acheté</h4><canvas id="chart-mat"></canvas></div>
+    <div class="chart-card"><h4>Main d'œuvre : Budget vs Payé</h4><canvas id="chart-mo"></canvas></div>
+    <div class="chart-card"><h4>Répartition des dépenses</h4><canvas id="chart-repartition"></canvas></div>
+    <div class="chart-card"><h4>Écart budget par phase MAT</h4><canvas id="chart-ecart"></canvas></div>
+  `;
+  renderCharts(T);
+
+  // MAT progress bars
+  const pm=document.getElementById("prog-mat");
+  pm.innerHTML=PHASES_MAT.map(ph=>{
+    let b=0,a=0;
+    ph.items.forEach(it=>{b+=it.budget||0;a+=getMontantAchete(it);});
+    a+=getExtrasTotal(ph.id,"mat");
+    const pct=b>0?Math.min(a/b*100,100):0;
+    const cls=a>b?"over":pct>80?"warn":"ok";
+    return `<div class="prog-wrap">
+      <div class="prog-label"><strong>${ph.label}</strong><span>${fmt(a)} / ${fmt(b)}</span></div>
+      <div class="prog-bar"><div class="prog-fill ${cls}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join("");
+
+  // MO progress bars
+  const pmo=document.getElementById("prog-mo");
+  pmo.innerHTML=PHASES_MO.map(ph=>{
+    let b=0,p=0;
+    ph.items.forEach(it=>{b+=it.budget||0;p+=getMOPaye(it);});
+    p+=getExtrasTotal(ph.id,"mo");
+    const pct=b>0?Math.min(p/b*100,100):0;
+    const cls=p>b?"over":pct>80?"warn":"ok";
+    return `<div class="prog-wrap">
+      <div class="prog-label"><strong>${ph.label}</strong><span>${fmt(p)} / ${fmt(b)}</span></div>
+      <div class="prog-bar"><div class="prog-fill ${cls}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join("");
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+function renderCharts(T){
+  const dark=state.darkMode;
+  const gridColor=dark?"rgba(255,255,255,.1)":"rgba(0,0,0,.05)";
+  const tickColor=dark?"#aaa":"#666";
+  Chart.defaults.color=tickColor;
+
+  const destroy=id=>{if(charts[id]){charts[id].destroy();delete charts[id];}};
+
+  // Doughnut: MAT
+  destroy("mat");
+  charts["mat"]=new Chart(document.getElementById("chart-mat"),{type:"doughnut",data:{
+    labels:["Acheté","Reste"],
+    datasets:[{data:[T.aMat,Math.max(0,T.bMat-T.aMat)],
+      backgroundColor:["#2E86AB","#E5E0D8"],borderWidth:2}]
+  },options:{plugins:{legend:{position:"bottom"}},cutout:"65%"}});
+
+  // Doughnut: MO
+  destroy("mo");
+  charts["mo"]=new Chart(document.getElementById("chart-mo"),{type:"doughnut",data:{
+    labels:["Payé","Reste"],
+    datasets:[{data:[T.pMO,Math.max(0,T.bMO-T.pMO)],
+      backgroundColor:["#27AE60","#E5E0D8"],borderWidth:2}]
+  },options:{plugins:{legend:{position:"bottom"}},cutout:"65%"}});
+
+  // Doughnut: Répartition
+  destroy("repartition");
+  charts["repartition"]=new Chart(document.getElementById("chart-repartition"),{type:"doughnut",data:{
+    labels:["Matériaux","Main d'œuvre","Admin"],
+    datasets:[{data:[T.aMat,T.pMO,T.admin],
+      backgroundColor:["#2E86AB","#27AE60","#7D3C98"],borderWidth:2}]
+  },options:{plugins:{legend:{position:"bottom"}},cutout:"60%"}});
+
+  // Bar: écart par phase MAT
+  destroy("ecart");
+  const labels=PHASES_MAT.map(ph=>ph.label.slice(0,14));
+  const ecarts=PHASES_MAT.map(ph=>{
+    let b=0,a=0;
+    ph.items.forEach(it=>{b+=it.budget||0;a+=getMontantAchete(it);});
+    a+=getExtrasTotal(ph.id,"mat");
+    return a-b;
+  });
+  charts["ecart"]=new Chart(document.getElementById("chart-ecart"),{type:"bar",data:{
+    labels,
+    datasets:[{label:"Écart (FCFA)",data:ecarts,
+      backgroundColor:ecarts.map(v=>v>0?"rgba(231,76,60,.7)":"rgba(39,174,96,.5)"),
+      borderColor:ecarts.map(v=>v>0?"#E74C3C":"#27AE60"),borderWidth:1}]
+  },options:{plugins:{legend:{display:false}},scales:{
+    x:{ticks:{font:{size:10}},grid:{color:gridColor}},
+    y:{ticks:{callback:v=>fmtN(v)},grid:{color:gridColor}}
+  }}});
+
+  // Line chart: dépenses mensuelles
+  renderLineChart();
+}
+
+function renderLineChart(){
+  const destroy=id=>{if(charts[id]){charts[id].destroy();delete charts[id];}};
+  destroy("line");
+
+  // Collect all dated events
+  const events=[];
+  PHASES_MAT.forEach(ph=>{
+    ph.items.forEach(it=>{
+      getAchats(it.id).forEach(a=>{
+        if(a.date){
+          const v=(parseFloat(a.qte)||0)*(parseFloat(a.prixReel)||0);
+          if(v>0) events.push({date:a.date,val:v});
+        }
+      });
+    });
+    (state.extras[ph.id]||[]).forEach(ex=>{
+      if(ex.date){const v=parseFloat(ex.montant)||0;if(v>0)events.push({date:ex.date,val:v});}
+    });
+  });
+  PHASES_MO.forEach(ph=>{
+    ph.items.forEach(it=>{
+      const m=state.mo[it.id];
+      if(m&&m.datePaiement){const v=parseFloat(m.paye)||0;if(v>0)events.push({date:m.datePaiement,val:v});}
+    });
+    (state.extras_mo[ph.id]||[]).forEach(ex=>{
+      if(ex.date){const v=parseFloat(ex.montant)||0;if(v>0)events.push({date:ex.date,val:v});}
+    });
+  });
+  ADMIN_CATS.forEach(cat=>{
+    (state.admin[cat.id]||[]).forEach(it=>{
+      if(it.date){const v=parseFloat(it.montant)||0;if(v>0)events.push({date:it.date,val:v});}
+    });
+  });
+
+  if(events.length===0){
+    document.getElementById("chart-line-wrap").style.display="none";
+    return;
+  }
+  document.getElementById("chart-line-wrap").style.display="";
+
+  events.sort((a,b)=>a.date.localeCompare(b.date));
+  // Group by month
+  const monthly={};
+  events.forEach(ev=>{
+    const m=ev.date.slice(0,7);
+    monthly[m]=(monthly[m]||0)+ev.val;
+  });
+  const months=Object.keys(monthly).sort();
+  // Cumulative
+  let cum=0;
+  const cumData=months.map(m=>{cum+=monthly[m];return cum;});
+  const barData=months.map(m=>monthly[m]);
+
+  const dark=state.darkMode;
+  const gridColor=dark?"rgba(255,255,255,.1)":"rgba(0,0,0,.05)";
+  charts["line"]=new Chart(document.getElementById("chart-line"),{type:"bar",data:{
+    labels:months,
+    datasets:[
+      {type:"line",label:"Cumulé",data:cumData,borderColor:"#E74C3C",backgroundColor:"rgba(231,76,60,.1)",
+        fill:true,tension:.3,yAxisID:"y1",order:1},
+      {type:"bar",label:"Mensuel",data:barData,backgroundColor:"rgba(46,134,171,.6)",
+        borderColor:"#2E86AB",borderWidth:1,yAxisID:"y",order:2}
+    ]
+  },options:{plugins:{legend:{position:"bottom"}},scales:{
+    x:{grid:{color:gridColor}},
+    y:{ticks:{callback:v=>fmtN(v)},grid:{color:gridColor},title:{display:true,text:"Mensuel (FCFA)"}},
+    y1:{position:"right",ticks:{callback:v=>fmtN(v)},grid:{display:false},title:{display:true,text:"Cumulé (FCFA)"}}
+  }}});
+}
+
+// ============================================================
+// MATERIAUX
+// ============================================================
+function renderMateriaux(){
+  const container=document.getElementById("mat-content");
+  container.innerHTML=PHASES_MAT.map(ph=>renderPhaseMat(ph)).join("");
+}
+
+function renderPhaseMat(ph){
+  const locked=state.closed[ph.id];
+  let totalB=0,totalA=0;
+  ph.items.forEach(it=>{totalB+=it.budget||0;totalA+=getMontantAchete(it);});
+  const extrasTotal=getExtrasTotal(ph.id,"mat");
+  totalA+=extrasTotal;
+  const over=totalA>totalB&&totalB>0;
+  const extras=state.extras[ph.id]||[];
+
+  // Résumé phase en-tête
+  const pct=totalB>0?Math.round(totalA/totalB*100):0;
+  const headerHtml=`<div class="phase-block">
+    <div class="phase-title">
+      ${ph.label}
+      ${ph.pendingPhase?'<span class="phase-locked" style="background:var(--or-p);color:var(--or);border-color:var(--or)">⏳ À budgétiser</span>':""}
+      ${locked?'<span class="phase-locked">🔒 Clôturée</span>':""}
+      ${over?'<span class="phase-locked" style="background:var(--rouge-p);color:var(--rouge);border-color:var(--rouge)">⚠️ Dépassement</span>':""}
+      <span style="font-size:12px;font-weight:400;color:var(--gris);margin-left:8px">Budget : ${fmt(totalB)} | Acheté : ${totalA>0?fmt(totalA):"—"} (${pct}%)</span>
+    </div>`;
+
+  // Items — cartes dépliables avec prix-boxes + historique
+  const itemsHtml=ph.items.map(it=>{
+    const achats=getAchats(it.id);
+    const montantTotal=getMontantAchete(it);
+    const qteAchetee=getQteAchetee(it);
+    const puMoyen=achats.length>0&&qteAchetee>0?montantTotal/qteAchetee:null;
+    const ecartMoyen=it.pu&&puMoyen!==null?puMoyen-it.pu:null;
+
+    if(it.pending) return `<div class="item-block"><div class="item-header"><div class="item-name">${it.desig} <span class="item-pending">💡 Prix et quantité à obtenir</span></div><span class="item-budget-chip">À chiffrer</span></div></div>`;
+
+    const chipsHtml=montantTotal>0
+      ?`<div class="item-chips"><span class="item-budget-chip">${fmt(it.budget)}</span><span class="item-achete-chip">✅ ${fmt(montantTotal)}</span></div>`
+      :`<span class="item-budget-chip">${fmt(it.budget)}</span>`;
+
+    const histoHtml=achats.length>0?`
+      <div class="historique-section">
+        <div class="historique-title">
+          <span>📦 Historique des achats (${achats.length})</span>
+          <span style="font-weight:700">${fmt(montantTotal)}</span>
+        </div>
+        ${achats.map((a,idx)=>{
+          const m=(parseFloat(a.qte)||0)*(parseFloat(a.prixReel)||0);
+          return `<div class="achat-row">
+            <span class="achat-date">${a.date||"—"}</span>
+            <span class="achat-detail">${a.qte||"?"} ${it.unite||""} × ${a.prixReel?fmtN(a.prixReel):"?"}${a.fournisseur?" — "+a.fournisseur:""}</span>
+            <span class="achat-montant">${fmt(m)}</span>
+            ${!locked?`<button class="achat-del" onclick="deleteAchat('${it.id}',${idx})" title="Supprimer">🗑</button>`:""}
+          </div>`;
+        }).join("")}
+        ${qteAchetee>0&&it.qte?`<div style="padding:6px 12px;font-size:11px;background:var(--ocean-p,#F0F7FA);color:var(--ocean,#2E86AB)">
+          Qté achetée : <strong>${qteAchetee} / ${it.qte} ${it.unite}</strong> &nbsp;|&nbsp;
+          Prix moyen : <strong>${puMoyen?fmtN(puMoyen):"—"} FCFA/${it.unite||"u"}</strong>
+          ${ecartMoyen!==null?`&nbsp;|&nbsp; Écart : <strong style="color:${ecartMoyen<0?"var(--vert)":"var(--rouge)"}">${ecartMoyen<0?"":"+"} ${fmtN(Math.abs(Math.round(ecartMoyen)))} FCFA/${it.unite}</strong>`:""}
+        </div>`:""}
+      </div>`
+      :`<div style="padding:8px 12px;font-size:12px;color:var(--gris);font-style:italic">Aucun achat enregistré pour ce poste.</div>`;
+
+    const aid=it.id.replace(/\./g,"_");
+    const formHtml=!locked?`
+      <div class="nouvel-achat">
+        <div style="font-weight:600;font-size:12px;padding:6px 12px;background:var(--gris-l,#f5f5f5)">➕ Enregistrer un achat</div>
+        <div style="display:flex;gap:6px;padding:8px 12px;flex-wrap:wrap;align-items:flex-end">
+          <div><label style="font-size:11px;display:block;margin-bottom:2px">Qté (${it.unite||"u"})</label>
+            <input type="number" step="any" min="0" id="qte_${aid}" placeholder="Ex: 1" style="width:70px;border:1px solid var(--border);border-radius:4px;padding:4px 6px;background:var(--surface);color:var(--text)"></div>
+          <div><label style="font-size:11px;display:block;margin-bottom:2px">PU réel (FCFA)</label>
+            <input type="number" step="any" min="0" id="pu_${aid}" placeholder="Prix facturé" style="width:100px;border:1px solid var(--border);border-radius:4px;padding:4px 6px;background:var(--surface);color:var(--text)"></div>
+          <div><label style="font-size:11px;display:block;margin-bottom:2px">Fournisseur</label>
+            <input type="text" id="four_${aid}" placeholder="Nom fournisseur" style="width:130px;border:1px solid var(--border);border-radius:4px;padding:4px 6px;background:var(--surface);color:var(--text)"></div>
+          <div><label style="font-size:11px;display:block;margin-bottom:2px">Date</label>
+            <input type="date" id="dt_${aid}" value="${new Date().toISOString().slice(0,10)}" style="width:130px;border:1px solid var(--border);border-radius:4px;padding:4px 6px;background:var(--surface);color:var(--text)"></div>
+          ${assets?`<button class="btn btn-sm btn-secondary" onclick="uploadFacture('${it.id}')">📎 Facture</button>`:""}
+          <button class="btn btn-sm btn-primary" onclick="addAchat('${it.id}','${aid}')">💾 Enregistrer</button>
+        </div>
+      </div>`:"";
+
+    return `<div class="item-block">
+      <div class="item-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'">
+        <div class="item-name">${it.desig}${it.warn?`<span class="item-warn">${it.warn}</span>`:""}</div>
+        ${chipsHtml}
+      </div>
+      <div class="item-detail">
+        <div class="prix-grid">
+          <div class="prix-box archi">
+            <label>Prix archi (FCFA/${it.unite||"u"})</label>
+            <div class="prix-val">${it.pu?fmtN(it.pu):"—"}</div>
+            <div class="prix-sub">${it.qte!=null?it.qte+" "+it.unite+" prévu":""}</div>
+          </div>
+          <div class="prix-box ${ecartMoyen===null?"ecart-neu":ecartMoyen<0?"ecart-ok":"ecart-ko"}">
+            <label>Prix moyen réel</label>
+            <div class="prix-val ${ecartMoyen===null?"gris":ecartMoyen<0?"vert":"rouge"}">${puMoyen?fmtN(Math.round(puMoyen))+" FCFA":"—"}</div>
+            <div class="prix-sub">${ecartMoyen!==null?(ecartMoyen<0?"▼ Économie ":"▲ Surcoût ")+Math.abs(Math.round(ecartMoyen)).toLocaleString("fr-FR")+" FCFA":"Sur la moyenne des achats"}</div>
+          </div>
+          <div class="prix-box ${montantTotal>0?"ecart-ok":"ecart-neu"}">
+            <label>Total acheté</label>
+            <div class="prix-val ${montantTotal>0?"vert":"gris"}">${montantTotal>0?fmtN(montantTotal)+" FCFA":"—"}</div>
+            <div class="prix-sub">${it.budget>0?fmt(it.budget-montantTotal)+" restant":""}</div>
+          </div>
+        </div>
+        ${histoHtml}
+        ${formHtml}
+      </div>
+    </div>`;
+  }).join("");
+
+  // Extras mat
+  let extrasHtml="";
+  if(extras.length>0){
+    const extTotal=getExtrasTotal(ph.id,"mat");
+    extrasHtml=`<div class="extra-section">
+      <div class="extra-section-title"><span>➕ Dépenses supplémentaires (${extras.length})</span><span>${fmt(extTotal)}</span></div>
+      ${extras.map((ex,idx)=>`<div class="achat-row"><span>${ex.date||"—"}</span><span>${ex.label}</span><span>${fmt(ex.montant)}</span>
+        ${!locked?`<button class="achat-del" onclick="delExtra('${ph.id}','mat',${idx})" title="Supprimer">🗑</button>`:""}
+      </div>`).join("")}
+    </div>`;
+  }
+
+  return headerHtml+itemsHtml+extrasHtml
+    +(locked?"":renderExtrasForm(ph.id,"mat"))
+    +`<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm ${locked?"btn-secondary":"btn-primary"}" onclick="toggleClose('${ph.id}')">
+        ${locked?"🔓 Rouvrir":"🔒 Clôturer phase"}
+      </button>
+    </div></div>`;
+}
+
+function renderExtrasForm(phaseId,type){
+  const key=phaseId+"_extras_"+type;
+  return `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center">
+    <input type="text" id="exl_${key}" placeholder="Label extra" style="border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--surface);color:var(--text);font-size:.8rem;width:150px">
+    <input type="number" id="exm_${key}" placeholder="Montant" style="border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--surface);color:var(--text);font-size:.8rem;width:110px">
+    <input type="date" id="exd_${key}" style="border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--surface);color:var(--text);font-size:.8rem;width:130px">
+    <button class="btn btn-sm btn-secondary" onclick="addExtra('${phaseId}','${type}','${key}')">+ Extra</button>
+  </div>`;
+}
+
+async function addAchat(itemId,aid){
+  const qte=parseFloat(document.getElementById("qte_"+aid).value);
+  const pu=parseFloat(document.getElementById("pu_"+aid).value);
+  const date=document.getElementById("dt_"+aid).value;
+  const fourEl=document.getElementById("four_"+aid);
+  const fournisseur=fourEl?fourEl.value.trim():"";
+  if(!qte||!pu){toast("⚠️ Qté et PU requis");return;}
+  if(!state.mat[itemId]) state.mat[itemId]={achats:[]};
+  if(!state.mat[itemId].achats) state.mat[itemId].achats=[];
+  state.mat[itemId].achats.push({qte,prixReel:pu,fournisseur,date:date||new Date().toISOString().slice(0,10)});
+  await saveState();
+  renderMateriaux();renderDashboard();updateBadges();renderLineChart();
+}
+
+async function delExtra(phaseId,type,idx){
+  const store=type==="mo"?state.extras_mo:state.extras;
+  if(!store[phaseId]) return;
+  store[phaseId].splice(idx,1);
+  await saveState();
+  if(type==="mo"){renderMO();}else{renderMateriaux();}
+  renderDashboard();updateBadges();renderLineChart();
+}
+
+async function deleteAchat(itemId,idx){
+  if(!state.mat[itemId]||!state.mat[itemId].achats) return;
+  state.mat[itemId].achats.splice(idx,1);
+  await saveState();
+  renderMateriaux();renderDashboard();updateBadges();renderLineChart();
+}
+
+async function addExtra(phaseId,type,key){
+  const label=document.getElementById("exl_"+key).value.trim();
+  const montant=parseFloat(document.getElementById("exm_"+key).value);
+  const date=document.getElementById("exd_"+key).value;
+  if(!label||!montant){toast("⚠️ Label et montant requis");return;}
+  const store=type==="mo"?state.extras_mo:state.extras;
+  if(!store[phaseId]) store[phaseId]=[];
+  store[phaseId].push({id:genId(),label,montant,date:date||new Date().toISOString().slice(0,10)});
+  await saveState();
+  if(type==="mo"){renderMO();}else{renderMateriaux();}
+  renderDashboard();updateBadges();renderLineChart();
+}
+
+function toggleClose(phaseId){
+  state.closed[phaseId]=!state.closed[phaseId];
+  saveState();
+  renderMateriaux();
+}
+
+async function uploadFacture(itemId){
+  if(!assets){toast("❌ Assets non disponibles");return;}
+  const input=document.createElement("input");
+  input.type="file";input.accept="image/*,application/pdf";
+  input.onchange=async e=>{
+    const file=e.target.files[0];if(!file) return;
+    try{
+      const url=await assets.upload(file);
+      if(!state.mat[itemId]) state.mat[itemId]={achats:[]};
+      if(!state.mat[itemId].factures) state.mat[itemId].factures=[];
+      state.mat[itemId].factures.push({name:file.name,url,date:new Date().toISOString().slice(0,10)});
+      await saveState();toast("📎 Facture uploadée");
+    }catch(err){toast("❌ Erreur upload");}
+  };
+  input.click();
+}
+
+// ============================================================
+// MO
+// ============================================================
+function renderMO(){
+  const container=document.getElementById("mo-content");
+  container.innerHTML=PHASES_MO.map(ph=>renderPhaseMO(ph)).join("");
+}
+
+function renderPhaseMO(ph){
+  const lockedKey=ph.id+"_mo";
+  const locked=state.closed[lockedKey];
+  let totalB=0,totalP=0;
+  ph.items.forEach(it=>{totalB+=it.budget||0;totalP+=getMOPaye(it);});
+  const extrasTotal=getExtrasTotal(ph.id,"mo");
+  totalP+=extrasTotal;
+  const over=totalP>totalB&&totalB>0;
+  const extras=state.extras_mo[ph.id]||[];
+
+  const rows=ph.items.map(it=>{
+    const paye=getMOPaye(it);
+    const over=paye>it.budget&&it.budget>0;
+    const mo=state.mo[it.id]||{};
+    if(it.pending) return `<tr><td>${it.desig}</td><td class="num pending">À chiffrer</td><td class="num pending">—</td><td></td></tr>`;
+    return `<tr>
+      <td>${it.desig}</td>
+      <td class="num">${fmt(it.budget)}</td>
+      <td class="num ${over?"over":paye>0?"ok":""}">${fmt(paye)}</td>
+      <td>${locked?"":renderMOForm(it,mo)}</td>
+    </tr>`;
+  }).join("");
+
+  return `<div class="phase-block">
+    <div class="phase-title">
+      ${ph.label}
+      ${locked?'<span class="phase-locked">🔒 Clôturée</span>':""}
+      ${over?'<span class="phase-locked" style="background:var(--rouge-p);color:var(--rouge);border-color:var(--rouge)">⚠️ Dépassement</span>':""}
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Désignation</th><th class="num">Budget</th><th class="num">Payé</th><th>Paiement</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr style="font-weight:600">
+            <td>Total phase</td>
+            <td class="num">${fmt(totalB)}</td>
+            <td class="num ${over?"over":""}">${fmt(totalP)}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    ${extras.length>0?`<div class="extras-list">Extras: ${extras.map(ex=>`<span>${ex.label}: ${fmt(ex.montant)}</span>`).join("")}</div>`:""}
+    ${locked?"":renderExtrasForm(ph.id,"mo")}
+    <div style="margin-top:8px">
+      <button class="btn btn-sm ${locked?"btn-secondary":"btn-primary"}" onclick="toggleCloseMO('${ph.id}')">
+        ${locked?"🔓 Rouvrir":"🔒 Clôturer phase"}
+      </button>
+    </div>
+  </div>`;
+}
+
+function renderMOForm(it,mo){
+  const aid=it.id.replace(/\./g,"_");
+  return `<div style="display:flex;gap:4px;flex-wrap:wrap">
+    <input type="number" id="mop_${aid}" placeholder="Montant payé" value="${mo.paye||""}"
+      style="width:120px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;background:var(--surface);color:var(--text)">
+    <input type="date" id="mod_${aid}" value="${mo.datePaiement||""}"
+      style="width:130px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;background:var(--surface);color:var(--text)">
+    <button class="btn btn-sm btn-primary" onclick="saveMO('${it.id}','${aid}')">✓</button>
+  </div>`;
+}
+
+async function saveMO(itemId,aid){
+  const paye=parseFloat(document.getElementById("mop_"+aid).value)||0;
+  const date=document.getElementById("mod_"+aid).value;
+  state.mo[itemId]={paye,datePaiement:date||new Date().toISOString().slice(0,10)};
+  await saveState();
+  renderMO();renderDashboard();updateBadges();renderLineChart();
+}
+
+function toggleCloseMO(phaseId){
+  const k=phaseId+"_mo";
+  state.closed[k]=!state.closed[k];
+  saveState();renderMO();
+}
+
+// ============================================================
+// ADMIN
+// ============================================================
+function renderAdmin(){
+  const container=document.getElementById("admin-content");
+  const total=getAdminTotal();
+  container.innerHTML=`
+    <div class="kpi" style="margin-bottom:16px;display:inline-block;min-width:200px">
+      <div class="kpi-label">Total administratif</div>
+      <div class="kpi-val">${fmt(total)}</div>
+    </div>
+    ${ADMIN_CATS.map(cat=>renderAdminCat(cat)).join("")}`;
+}
+
+function renderAdminCat(cat){
+  const items=state.admin[cat.id]||[];
+  const total=items.reduce((s,it)=>s+(parseFloat(it.montant)||0),0);
+  return `<div class="admin-cat card">
+    <h4>${cat.label} <span style="float:right;color:var(--gris)">${fmt(total)}</span></h4>
+    ${items.length>0?`<div class="table-wrap"><table>
+      <thead><tr><th>Description</th><th class="num">Montant</th><th>Date</th><th></th></tr></thead>
+      <tbody>${items.map((it,i)=>`<tr>
+        <td>${it.desc||"—"}</td>
+        <td class="num">${fmt(it.montant)}</td>
+        <td>${it.date||"—"}</td>
+        <td><button class="btn btn-sm btn-danger" onclick="deleteAdmin('${cat.id}',${i})">✕</button></td>
+      </tr>`).join("")}</tbody>
+    </table></div>`:""}
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center">
+      <input type="text" id="adesc_${cat.id}" placeholder="Description"
+        style="border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--surface);color:var(--text);font-size:.85rem;flex:1;min-width:120px">
+      <input type="number" id="amnt_${cat.id}" placeholder="Montant"
+        style="border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--surface);color:var(--text);font-size:.85rem;width:110px">
+      <input type="date" id="adate_${cat.id}"
+        style="border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--surface);color:var(--text);font-size:.85rem;width:130px">
+      <button class="btn btn-sm btn-primary" onclick="addAdmin('${cat.id}')">+ Ajouter</button>
+    </div>
+  </div>`;
+}
+
+async function addAdmin(catId){
+  const desc=document.getElementById("adesc_"+catId).value.trim();
+  const montant=parseFloat(document.getElementById("amnt_"+catId).value);
+  const date=document.getElementById("adate_"+catId).value;
+  if(!montant){toast("⚠️ Montant requis");return;}
+  if(!state.admin[catId]) state.admin[catId]=[];
+  state.admin[catId].push({id:genId(),desc,montant,date:date||new Date().toISOString().slice(0,10)});
+  await saveState();
+  renderAdmin();renderDashboard();renderLineChart();
+}
+
+async function deleteAdmin(catId,idx){
+  state.admin[catId].splice(idx,1);
+  await saveState();
+  renderAdmin();renderDashboard();renderLineChart();
+}
+
+// ============================================================
+// JOURNAL
+// ============================================================
+function renderJournal(){
+  const notes=[...(state.notes||[])].sort((a,b)=>b.ts-a.ts);
+  const list=document.getElementById("notes-list");
+  if(!notes.length){
+    list.innerHTML=`<div class="card" style="text-align:center;color:var(--gris);padding:30px">
+      📓 Aucune note pour l'instant. Ajoutez votre première note de chantier.
+    </div>`;
+    return;
+  }
+  list.innerHTML=notes.map(n=>`
+    <div class="note-item">
+      <div class="note-date">${new Date(n.ts).toLocaleString("fr-FR")}</div>
+      <div class="note-title">${n.titre||"Sans titre"}</div>
+      <div class="note-body">${n.corps||""}</div>
+      <div class="note-actions">
+        <button class="btn btn-sm btn-danger" onclick="deleteNote('${n.id}')">🗑 Supprimer</button>
+      </div>
+    </div>`).join("");
+}
+
+async function addNote(){
+  const titre=document.getElementById("note-titre").value.trim();
+  const corps=document.getElementById("note-corps").value.trim();
+  if(!titre&&!corps){toast("⚠️ Titre ou contenu requis");return;}
+  if(!state.notes) state.notes=[];
+  state.notes.push({id:genId(),titre,corps,ts:Date.now()});
+  document.getElementById("note-titre").value="";
+  document.getElementById("note-corps").value="";
+  await saveState();
+  renderJournal();
+  toast("✅ Note ajoutée");
+}
+
+async function deleteNote(noteId){
+  state.notes=(state.notes||[]).filter(n=>n.id!==noteId);
+  await saveState();
+  renderJournal();
+}
+
+// ============================================================
+// PLANNING
+// ============================================================
+function addBusinessDays(dateStr, days){
+  const d=new Date(dateStr);
+  let added=0;
+  while(added<days){
+    d.setDate(d.getDate()+1);
+    const dow=d.getDay();
+    if(dow!==0&&dow!==6) added++;
+  }
+  return d.toISOString().slice(0,10);
+}
+
+function autoFillPlanFin(phaseId){
+  const ph=PHASES_MAT.find(p=>p.id===phaseId);
+  if(!ph||!ph.dureeArchi) return;
+  const startEl=document.getElementById("pld_"+phaseId);
+  const endEl=document.getElementById("plf_"+phaseId);
+  if(startEl&&startEl.value&&endEl&&!endEl.value){
+    endEl.value=addBusinessDays(startEl.value, ph.dureeArchi);
+  }
+}
+
+function renderPlanning(){
+  const container=document.getElementById("planning-content");
+
+  // Tableau récap durées archi
+  const phasesAvecDuree=PHASES_MAT.filter(ph=>ph.dureeArchi);
+  const totalJours=phasesAvecDuree.reduce((s,ph)=>s+ph.dureeArchi,0);
+  const recapHtml=`<div class="phase-block" style="margin-bottom:20px">
+    <div class="phase-title" style="margin-bottom:10px">📅 Durées estimées par l'architecte</div>
+    <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+      <thead><tr style="background:var(--ocean);color:#fff">
+        <th style="padding:7px 12px;text-align:left">Phase</th>
+        <th style="padding:7px 12px;text-align:center">Durée archi</th>
+        <th style="padding:7px 12px;text-align:left">Détail</th>
+      </tr></thead>
+      <tbody>
+        ${phasesAvecDuree.map((ph,i)=>`<tr style="background:${i%2===0?"var(--card-bg)":"var(--gris-l)"}">
+          <td style="padding:7px 12px;font-weight:600">${ph.label}</td>
+          <td style="padding:7px 12px;text-align:center">
+            <span style="background:var(--ocean);color:#fff;border-radius:12px;padding:2px 10px;font-weight:700">${ph.dureeArchi}j</span>
+          </td>
+          <td style="padding:7px 12px;color:var(--gris);font-size:.78rem">${ph.dureeArchiDetail||"Jours ouvrables"}</td>
+        </tr>`).join("")}
+      </tbody>
+      <tfoot><tr style="background:var(--ocean-p,#e8f4f9);font-weight:700">
+        <td style="padding:7px 12px">Total structure principale</td>
+        <td style="padding:7px 12px;text-align:center">
+          <span style="background:var(--vert);color:#fff;border-radius:12px;padding:2px 10px">${totalJours}j</span>
+        </td>
+        <td style="padding:7px 12px;color:var(--gris);font-size:.78rem">≈ ${Math.ceil(totalJours/5)} semaines ouvrables</td>
+      </tr></tfoot>
+    </table>
+    <p style="font-size:.75rem;color:var(--gris);margin-top:8px;font-style:italic">Durées fournies par l'architecte le 30/09/2026. Saisissez un début prévu pour calculer automatiquement la fin.</p>
+  </div>`;
+
+  container.innerHTML=recapHtml+PHASES_MAT.map(ph=>renderPlanningPhase(ph)).join("");
+}
+
+function renderPlanningPhase(ph){
+  const p=state.planning[ph.id]||{};
+  const statut=p.statut||"planned";
+  const statutLabels={planned:"Prévu",ongoing:"En cours",done:"Terminé",delayed:"En retard"};
+  const statutClass={planned:"planned",ongoing:"ongoing",done:"done",delayed:"delayed"};
+
+  // Compute Gantt
+  let ganttHtml="";
+  if(p.dateDebut&&p.dateFin){
+    const start=new Date(p.dateDebut).getTime();
+    const end=new Date(p.dateFin).getTime();
+    const range=end-start||1;
+    const now=Date.now();
+    const pctPlan=Math.min(100,Math.max(0,(now-start)/range*100));
+
+    let realBar="";
+    if(p.dateDebutReel&&p.dateFinReel){
+      const rs=new Date(p.dateDebutReel).getTime();
+      const re=new Date(p.dateFinReel).getTime();
+      const startOff=Math.max(0,(rs-start)/range*100);
+      const width=Math.min(100-startOff,Math.max(1,(re-rs)/range*100));
+      realBar=`<div class="gantt-bar real" style="left:${startOff}%;width:${width}%"></div>`;
+    }
+    ganttHtml=`<div class="gantt-wrap">
+      <div style="font-size:.75rem;color:var(--gris);margin-bottom:3px">${p.dateDebut} → ${p.dateFin}</div>
+      <div class="gantt-bar-container">
+        <div class="gantt-bar planned" style="left:0;width:100%"></div>
+        ${realBar}
+      </div>
+      <div class="gantt-legend">
+        <span><span class="dot" style="background:#2E86AB"></span>Prévu</span>
+        ${p.dateDebutReel?`<span><span class="dot" style="background:#27AE60"></span>Réel</span>`:""}
+      </div>
+    </div>`;
+  }
+
+  const dureeArchiBadge=ph.dureeArchi
+    ?`<span style="background:var(--ocean);color:#fff;border-radius:12px;padding:2px 10px;font-size:.75rem;font-weight:700">⏱ ${ph.dureeArchi}j archi</span>`:"";
+
+  return `<div class="planning-phase">
+    <h4>${ph.label} <span class="statut-badge ${statutClass[statut]}">${statutLabels[statut]||statut}</span> ${dureeArchiBadge}</h4>
+    <div class="planning-grid">
+      <div class="form-group">
+        <label>Début prévu</label>
+        <input type="date" id="pld_${ph.id}" value="${p.dateDebut||""}"
+          onchange="autoFillPlanFin('${ph.id}')"
+          style="border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--surface);color:var(--text)">
+      </div>
+      <div class="form-group">
+        <label>Fin prévue ${ph.dureeArchi?`<small style="color:var(--gris)">(auto si vide)</small>`:""}</label>
+        <input type="date" id="plf_${ph.id}" value="${p.dateFin||""}"
+          style="border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--surface);color:var(--text)">
+      </div>
+      <div class="form-group">
+        <label>Début réel</label>
+        <input type="date" id="prd_${ph.id}" value="${p.dateDebutReel||""}"
+          style="border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--surface);color:var(--text)">
+      </div>
+      <div class="form-group">
+        <label>Fin réelle</label>
+        <input type="date" id="prf_${ph.id}" value="${p.dateFinReel||""}"
+          style="border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--surface);color:var(--text)">
+      </div>
+      <div class="form-group">
+        <label>Statut</label>
+        <select id="pst_${ph.id}" style="border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--surface);color:var(--text)">
+          <option value="planned" ${statut==="planned"?"selected":""}>📋 Prévu</option>
+          <option value="ongoing" ${statut==="ongoing"?"selected":""}>⚡ En cours</option>
+          <option value="done" ${statut==="done"?"selected":""}>✅ Terminé</option>
+          <option value="delayed" ${statut==="delayed"?"selected":""}>⚠️ En retard</option>
+        </select>
+      </div>
+    </div>
+    ${ganttHtml}
+    <button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="savePlanning('${ph.id}')">💾 Enregistrer</button>
+  </div>`;
+}
+
+async function savePlanning(phaseId){
+  const g=id=>document.getElementById(id);
+  state.planning[phaseId]={
+    dateDebut:g("pld_"+phaseId).value,
+    dateFin:g("plf_"+phaseId).value,
+    dateDebutReel:g("prd_"+phaseId).value,
+    dateFinReel:g("prf_"+phaseId).value,
+    statut:g("pst_"+phaseId).value,
+  };
+  await saveState();
+  renderPlanning();
+  toast("✅ Planning enregistré");
+}
+
+// ============================================================
+// RECAP
+// ============================================================
+function renderRecap(){
+  const T=calcTotaux();
+  const bg=state.budgetGlobal;
+  let html="";
+
+  // Summary KPIs
+  html+=`<div class="recap-section">
+    <h3>Synthèse financière</h3>
+    <table><thead><tr><th>Catégorie</th><th class="num">Budget prévu</th><th class="num">Réalisé</th><th class="num">Écart</th></tr></thead>
+    <tbody>
+      <tr><td>Matériaux</td><td class="num">${fmt(T.bMat)}</td><td class="num">${fmt(T.aMat)}</td><td class="num ${T.aMat>T.bMat?"over":"ok"}">${fmt(T.aMat-T.bMat)}</td></tr>
+      <tr><td>Main d'œuvre</td><td class="num">${fmt(T.bMO)}</td><td class="num">${fmt(T.pMO)}</td><td class="num ${T.pMO>T.bMO?"over":"ok"}">${fmt(T.pMO-T.bMO)}</td></tr>
+      <tr><td>Administratif</td><td class="num">—</td><td class="num">${fmt(T.admin)}</td><td class="num">—</td></tr>
+    </tbody>
+    <tfoot><tr style="font-weight:700">
+      <td>TOTAL</td>
+      <td class="num">${fmt(T.bMat+T.bMO)}</td>
+      <td class="num">${fmt(T.totalAll)}</td>
+      <td class="num ${T.totalAll>T.bMat+T.bMO?"over":"ok"}">${fmt(T.totalAll-(T.bMat+T.bMO))}</td>
+    </tr></tfoot>
+    </table>
+    ${bg!=null?`<p style="margin-top:10px;font-weight:600">
+      Enveloppe totale : ${fmt(bg)} — Reste à engager : <span style="color:${bg-T.totalAll<0?"var(--rouge)":"var(--vert)"}">${fmt(bg-T.totalAll)}</span>
+    </p>`:""}
+  </div>`;
+
+  // MAT detail
+  html+=`<div class="recap-section"><h3>Détail Matériaux</h3>`;
+  PHASES_MAT.forEach(ph=>{
+    let totalB=0,totalA=0;
+    ph.items.forEach(it=>{totalB+=it.budget||0;totalA+=getMontantAchete(it);});
+    const ext=getExtrasTotal(ph.id,"mat");totalA+=ext;
+    html+=`<div style="margin-bottom:12px"><strong>${ph.label}</strong>
+      <table style="margin-top:4px">
+        <thead><tr><th>Désignation</th><th class="num">Budget</th><th class="num">Acheté</th></tr></thead>
+        <tbody>
+          ${ph.items.map(it=>{
+            const a=getMontantAchete(it);
+            return `<tr><td>${it.desig}</td><td class="num">${fmt(it.budget)}</td><td class="num ${a>it.budget&&it.budget>0?"over":""}">${fmt(a)}</td></tr>`;
+          }).join("")}
+          ${ext>0?`<tr><td><em>Extras</em></td><td class="num">—</td><td class="num">${fmt(ext)}</td></tr>`:""}
+        </tbody>
+        <tfoot><tr style="font-weight:600"><td>Sous-total</td><td class="num">${fmt(totalB)}</td><td class="num ${totalA>totalB&&totalB>0?"over":""}">${fmt(totalA)}</td></tr></tfoot>
+      </table>
+    </div>`;
+  });
+  html+=`</div>`;
+
+  // MO detail
+  html+=`<div class="recap-section"><h3>Détail Main d'œuvre</h3>
+    <table><thead><tr><th>Phase</th><th>Désignation</th><th class="num">Budget</th><th class="num">Payé</th></tr></thead>
+    <tbody>`;
+  PHASES_MO.forEach(ph=>{
+    ph.items.forEach(it=>{
+      const p=getMOPaye(it);
+      html+=`<tr><td>${ph.label}</td><td>${it.desig}</td><td class="num">${fmt(it.budget)}</td><td class="num ${p>it.budget&&it.budget>0?"over":""}">${fmt(p)}</td></tr>`;
+    });
+    const ext=getExtrasTotal(ph.id,"mo");
+    if(ext>0) html+=`<tr><td>${ph.label}</td><td><em>Extras</em></td><td class="num">—</td><td class="num">${fmt(ext)}</td></tr>`;
+  });
+  html+=`</tbody></table></div>`;
+
+  // Admin detail
+  if(T.admin>0){
+    html+=`<div class="recap-section"><h3>Détail Administratif</h3>
+      <table><thead><tr><th>Catégorie</th><th>Description</th><th class="num">Montant</th><th>Date</th></tr></thead><tbody>`;
+    ADMIN_CATS.forEach(cat=>{
+      (state.admin[cat.id]||[]).forEach(it=>{
+        html+=`<tr><td>${cat.label}</td><td>${it.desc||"—"}</td><td class="num">${fmt(it.montant)}</td><td>${it.date||"—"}</td></tr>`;
+      });
+    });
+    html+=`</tbody></table></div>`;
+  }
+
+  document.getElementById("recap-content").innerHTML=html;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+async function init(){
+  await initCapabilities();
+  // Apply saved dark mode
+  if(state.darkMode) document.documentElement.setAttribute("data-theme","dark");
+  renderDashboard();
+  renderMateriaux();
+  renderMO();
+  renderAdmin();
+  renderJournal();
+  renderPlanning();
+  renderRecap();
+  updateBadges();
+}
+init();
+</script>
+</body>
+</html>
